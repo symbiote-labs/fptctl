@@ -452,6 +452,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     }
     created: list[dict[str, Any]] = []
     records: list[dict[str, Any]] = []
+    # Before the cases: the download cases write into it.
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     workdir = Path(tempfile.mkdtemp(prefix="fpt-parity-"))
     try:
         run_cli = subprocess_cli(creds, workdir)
@@ -486,7 +488,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         },
         "cases": records,
     }
-    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     text = json.dumps(results, indent=2, sort_keys=True)
     (RESULTS_DIR / f"{run_id}.json").write_text(text, encoding="utf-8")
     (RESULTS_DIR / "latest.json").write_text(text, encoding="utf-8")
