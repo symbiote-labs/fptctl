@@ -1,0 +1,36 @@
+name: Parity
+
+# Runs the live parity suite against the sandbox site. Manual only: it creates and retires test
+# data on a shared site, and it needs the FPT_TEST_* repository secrets, which forks never get.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parity
+  cancel-in-progress: false
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    env:
+      FPT_TEST_SITE: ${{ secrets.FPT_TEST_SITE }}
+      FPT_TEST_SCRIPT_NAME: ${{ secrets.FPT_TEST_SCRIPT_NAME }}
+      FPT_TEST_API_KEY: ${{ secrets.FPT_TEST_API_KEY }}
+      FPT_TEST_LOGIN: ${{ secrets.FPT_TEST_LOGIN }}
+      FPT_TEST_PASSWORD: ${{ secrets.FPT_TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --locked
+      - run: uv run python -m parity.runner
+      - run: uv run python -m parity.burndown --strict
+      - if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: burndown
+          path: |
+            BURNDOWN.md
+            parity/results/latest.json

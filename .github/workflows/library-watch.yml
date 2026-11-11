@@ -1,0 +1,24 @@
+name: Library watch
+
+# Once a day, look for a shotgun-api3 release newer than the pin. When there is one, open an issue
+# (once per version) listing how its public API changed. skills/fpt-library-upgrade takes it from
+# there.
+on:
+  schedule:
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --locked
+      - run: uv run python -m scripts.library_watch --issue
+        env:
+          GH_TOKEN: ${{ github.token }}
