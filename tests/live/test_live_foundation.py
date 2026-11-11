@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from fpt.cli import main
-from fpt.client import build_client
-from fpt.context import Deps
-from fpt.secrets import MemoryStore
+from fptctl.cli import main
+from fptctl.client import build_client
+from fptctl.context import Deps
+from fptctl.secrets import MemoryStore
 
 pytestmark = pytest.mark.live
 
@@ -19,9 +19,9 @@ def make_deps(tmp_path: Path, **overrides: str) -> Deps:
     if missing:
         pytest.skip(f"live tests need {', '.join(missing)}")
     environ = {
-        "FPT_SITE": os.environ["FPT_TEST_SITE"],
-        "FPT_SCRIPT_NAME": os.environ["FPT_TEST_SCRIPT_NAME"],
-        "FPT_API_KEY": os.environ["FPT_TEST_API_KEY"],
+        "FPTCTL_SITE": os.environ["FPT_TEST_SITE"],
+        "FPTCTL_SCRIPT_NAME": os.environ["FPT_TEST_SCRIPT_NAME"],
+        "FPTCTL_API_KEY": os.environ["FPT_TEST_API_KEY"],
         **overrides,
     }
     return Deps(
@@ -43,12 +43,12 @@ def test_auth_status_succeeds(tmp_path: Path, capsys: pytest.CaptureFixture[str]
 
 
 def test_wrong_api_key_exits_3(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    deps = make_deps(tmp_path, FPT_API_KEY="definitely-not-the-key")
+    deps = make_deps(tmp_path, FPTCTL_API_KEY="definitely-not-the-key")
     assert main(["auth", "status"], deps=deps) == 3
     assert json.loads(capsys.readouterr().err)["error"]["type"] == "auth"
 
 
 def test_unreachable_site_exits_6(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    deps = make_deps(tmp_path, FPT_SITE="https://fpt-no-such-host.invalid")
+    deps = make_deps(tmp_path, FPTCTL_SITE="https://fptctl-no-such-host.invalid")
     assert main(["auth", "status"], deps=deps) == 6
     assert json.loads(capsys.readouterr().err)["error"]["type"] == "network"

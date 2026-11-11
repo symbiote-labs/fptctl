@@ -64,7 +64,7 @@
    "args": {"entity_type": "Shot", "filters": [["id", "is", "${twin.id}"]], "fields": ["code"]},
    "argv": ["get", "Shot", "${twin.id}", "--fields", "code"]},
   {"id": "get.ca_certs", "method": "find_one", "mode": "identical",
-   "env": {"FPT_CA_CERTS": "${ca_certs}"},
+   "env": {"FPTCTL_CA_CERTS": "${ca_certs}"},
    "args": {"entity_type": "Shot", "filters": [["id", "is", "${twin.id}"]], "fields": ["code"]},
    "argv": ["get", "Shot", "${twin.id}", "--fields", "code"]}
 ]

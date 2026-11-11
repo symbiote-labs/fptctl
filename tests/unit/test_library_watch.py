@@ -10,7 +10,7 @@ from parity.inventory import public_methods
 from scripts import library_watch
 from scripts.api_signatures import signatures
 
-from fpt import __version__
+from fptctl import __version__
 
 ROOT = library_watch.ROOT
 
@@ -81,7 +81,7 @@ def test_readme_names_the_pinned_library_version_and_the_current_release() -> No
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
     assert f"`shotgun_api3` {pinned}" in readme, "README must name the pinned library version"
-    tags = set(re.findall(r"fpt-cli@v([0-9.]+)", readme))
+    tags = set(re.findall(r"fptctl@v([0-9.]+)", readme))
     assert tags == {__version__}, f"README install lines point at {tags}, not v{__version__}"
 
 
@@ -127,7 +127,7 @@ def test_report_dir_then_open_issue_renders_the_issue_in_the_trusted_step(
     library_watch.main(["--open-issue", str(tmp_path)])
 
     assert opened[0][0] == "shotgun-api3 3.10.6 is out"
-    assert "fpt pins **3.10.5**" in opened[0][1]
+    assert "fptctl pins **3.10.5**" in opened[0][1]
     assert "  after  (3.10.6)" in opened[0][1]
 
 

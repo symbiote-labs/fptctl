@@ -9,8 +9,8 @@ multi_arg_operators = "https://developers.shotgridsoftware.com/python-api/refere
 enums = "shotgun_api3 3.10.5 shotgun.py docstrings and code: find() order and filter_operator, summarize() summary_fields and grouping, batch() request_type; read 2026-11-10"
 
 [surfaces]
-# method = the fpt command that is its designed surface. Every other public method's surface is
-# `fpt api call METHOD`.
+# method = the fptctl command that is its designed surface. Every other public method's surface is
+# `fptctl api call METHOD`.
 info = "info"
 get_session_token = "auth token"
 find = "find"
@@ -42,7 +42,7 @@ followers = "followers"
 following = "following"
 
 [not_exposed]
-# "method.parameter" = reason. Reachable through `fpt api call` only.
+# "method.parameter" = reason. Reachable through `fptctl api call` only.
 "download_attachment.attachment_id" = "deprecated by the library in favour of `attachment`"
 
 [multi_arg_operators]

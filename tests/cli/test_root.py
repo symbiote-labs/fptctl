@@ -43,7 +43,7 @@ def test_missing_credentials_exit_3_with_structured_error(harness: Any) -> None:
     assert result.code == 3
     assert result.stdout == ""
     assert result.error["type"] == "auth"
-    assert "fpt auth login" in result.error["message"]
+    assert "fptctl auth login" in result.error["message"]
     assert harness.built == []
 
 
@@ -95,7 +95,7 @@ def test_bad_format_value_exits_2(harness: Any) -> None:
 def test_no_arguments_prints_help_and_exits_0(harness: Any) -> None:
     result = harness.run()
     assert result.code == 0
-    assert "Usage: fpt" in result.stdout
+    assert "Usage: fptctl" in result.stdout
     assert "info" in result.stdout
 
 
@@ -108,7 +108,7 @@ def test_help_does_not_need_credentials(harness: Any) -> None:
 def test_trace_file_records_the_library_call(harness: Any, tmp_path: Any) -> None:
     harness.use_script_env()
     trace = tmp_path / "trace.jsonl"
-    harness.env["FPT_TRACE_FILE"] = str(trace)
+    harness.env["FPTCTL_TRACE_FILE"] = str(trace)
     harness.client.responses["info"] = INFO
     assert harness.run("info").code == 0
     assert [json.loads(line)["call"] for line in trace.read_text().splitlines()] == ["info"]

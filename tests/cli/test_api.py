@@ -67,7 +67,7 @@ def test_unknown_method_is_a_usage_error_before_connecting(harness: Any) -> None
     harness.use_script_env()
     result = harness.run("api", "call", "frobnicate")
     assert result.code == 2
-    assert "fpt api methods" in result.error["message"]
+    assert "fptctl api methods" in result.error["message"]
     assert harness.built == []
 
 

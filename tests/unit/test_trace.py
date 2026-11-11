@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 import shotgun_api3
 
-from fpt.client import (
+from fptctl.client import (
     REDACTED,
     Credentials,
     TracedClient,
@@ -15,7 +15,7 @@ from fpt.client import (
     describe_call,
     redact,
 )
-from fpt.errors import UsageError
+from fptctl.errors import UsageError
 
 
 class Library:

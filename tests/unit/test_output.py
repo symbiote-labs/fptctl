@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from fpt.errors import UsageError
-from fpt.output import format_cell, render, resolve_format
+from fptctl.errors import UsageError
+from fptctl.output import format_cell, render, resolve_format
 
 ROWS = [
     {

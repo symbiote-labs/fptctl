@@ -26,4 +26,4 @@ jobs:
       - run: uv run mypy src parity scripts
       # The skill's command reference must match the CLI docstrings (tests check it too).
       - run: uv run python -m scripts.skill_docs --check
-      - run: uv run pytest --cov=fpt
+      - run: uv run pytest --cov=fptctl

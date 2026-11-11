@@ -509,7 +509,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fpt-cli"
+name = "fptctl"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

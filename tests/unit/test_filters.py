@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 from parity.inventory import load_dimensions
 
-from fpt.errors import UsageError
-from fpt.filters import MULTI_ARG_OPERATORS, build_filters, parse_filter
+from fptctl.errors import UsageError
+from fptctl.filters import MULTI_ARG_OPERATORS, build_filters, parse_filter
 
 
 @pytest.mark.parametrize(

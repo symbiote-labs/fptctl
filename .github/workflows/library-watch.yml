@@ -1,7 +1,7 @@
 name: Library watch
 
 # Once a day, look for a shotgun-api3 release newer than the pin. When there is one, open an issue
-# (once per version) listing how its public API changed. skills/fpt-library-upgrade takes it from
+# (once per version) listing how its public API changed. skills/fptctl-library-upgrade takes it from
 # there.
 #
 # Two jobs, because inspecting a new release installs and imports code nobody has reviewed yet.

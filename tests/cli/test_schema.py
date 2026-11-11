@@ -3,7 +3,7 @@ from typing import Any
 
 import pytest
 
-import fpt.commands._options as options
+import fptctl.commands._options as options
 
 PROJECT = {"type": "Project", "id": 70}
 

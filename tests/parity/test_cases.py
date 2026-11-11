@@ -1,4 +1,4 @@
-"""Every committed case through fpt with a fake client: the command line makes its call."""
+"""Every committed case through fptctl with a fake client: the command line makes its call."""
 
 import functools
 from datetime import date

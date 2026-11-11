@@ -1,5 +1,5 @@
 [project]
-name = "fpt-cli"
+name = "fptctl"
 dynamic = ["version"]
 description = "Command-line interface for ShotGrid / Flow Production Tracking"
 readme = "README.md"
@@ -17,10 +17,10 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/symbiote-labs/fpt-cli"
+Repository = "https://github.com/symbiote-labs/fptctl"
 
 [project.scripts]
-fpt = "fpt.cli:main"
+fptctl = "fptctl.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "tomli>=2.0"]
@@ -30,10 +30,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/fpt/__init__.py"
+path = "src/fptctl/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fpt"]
+packages = ["src/fptctl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

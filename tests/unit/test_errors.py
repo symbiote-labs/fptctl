@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from fpt.errors import (
+from fptctl.errors import (
     ApiFaultError,
     AuthError,
     ExitCode,

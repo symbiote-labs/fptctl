@@ -1,7 +1,7 @@
 """Print the public API of the installed shotgun_api3 as JSON.
 
 It uses the parity inventory's rule for what counts: every public callable on Shotgun, and the
-constructor. It imports nothing from fpt, so it can run in a throw-away environment that holds
+constructor. It imports nothing from fptctl, so it can run in a throw-away environment that holds
 only one library version:
 
     uv run --no-project --with shotgun-api3==3.10.5 python scripts/api_signatures.py

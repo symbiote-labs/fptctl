@@ -1,7 +1,7 @@
 """Ratchets: every command documents itself completely, and the skill matches the source.
 
 A failure here names the command and says what is missing. Fix the command's docstring in
-src/fpt/commands/, then run `uv run python -m scripts.skill_docs`.
+src/fptctl/commands/, then run `uv run python -m scripts.skill_docs`.
 """
 
 import re
@@ -12,14 +12,14 @@ import click
 import pytest
 from scripts import skill_docs
 
-from fpt.cli import cli
+from fptctl.cli import cli
 
 DOCS = skill_docs.command_docs()
 SHELL_OPERATORS = {"|", "||", "&&", ";", "<", ">", ">>", "&"}
 
 
 def example_argv(example: str) -> list[str]:
-    """The arguments after `fpt` in the one shell segment of an example that runs fpt."""
+    """The arguments after `fptctl` in the one shell segment of an example that runs fptctl."""
     lexer = shlex.shlex(example, posix=True, punctuation_chars=True)
     lexer.whitespace_split = True
     segments: list[list[str]] = [[]]
@@ -28,14 +28,14 @@ def example_argv(example: str) -> list[str]:
             segments.append([])
         else:
             segments[-1].append(token)
-    runs = [segment for segment in segments if segment[:1] == ["fpt"]]
-    assert len(runs) == 1, f"example must run fpt exactly once: {example!r}"
+    runs = [segment for segment in segments if segment[:1] == ["fptctl"]]
+    assert len(runs) == 1, f"example must run fptctl exactly once: {example!r}"
     return runs[0][1:]
 
 
 def parse_without_running(argv: list[str]) -> click.Command:
     """Parse argv against the real CLI (types, required arguments, unknown flags), call nothing."""
-    context = cli.make_context("fpt", list(argv))
+    context = cli.make_context("fptctl", list(argv))
     command: click.Command = cli
     rest = [*getattr(context, "_protected_args", []), *context.args]
     while isinstance(command, click.Group):

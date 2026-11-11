@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-import fpt.commands._options as options
+import fptctl.commands._options as options
 
 SHOT = {"type": "Shot", "id": 1, "code": "sh010"}
 

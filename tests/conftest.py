@@ -7,10 +7,10 @@ from typing import Any
 
 import pytest
 
-from fpt.cli import main
-from fpt.client import Credentials, TracedClient
-from fpt.context import Deps
-from fpt.secrets import MemoryStore
+from fptctl.cli import main
+from fptctl.client import Credentials, TracedClient
+from fptctl.context import Deps
+from fptctl.secrets import MemoryStore
 
 
 class FakeClient:
@@ -69,7 +69,9 @@ class Harness:
 
     def use_script_env(self) -> None:
         self.env.update(
-            FPT_SITE="https://env.example.com", FPT_SCRIPT_NAME="envbot", FPT_API_KEY="env-key"
+            FPTCTL_SITE="https://env.example.com",
+            FPTCTL_SCRIPT_NAME="envbot",
+            FPTCTL_API_KEY="env-key",
         )
 
     def run(self, *args: str, stdin: str = "") -> Result:

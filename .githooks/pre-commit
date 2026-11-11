@@ -1,15 +1,15 @@
 #!/bin/sh
-# Keep the fpt skill in step with the CLI. The command reference under skills/fpt/ is generated
+# Keep the fptctl skill in step with the CLI. The command reference under skills/fptctl/ is generated
 # from the command docstrings; this regenerates it when the CLI changes and stops the commit so
 # the result can be reviewed and staged. CI fails on stale docs either way.
 #
 # Enable once per clone:  git config core.hooksPath .githooks
 set -e
-if git diff --cached --name-only | grep -qE '^(src/fpt/|scripts/skill_docs\.py|skills/fpt/|parity/dimensions\.toml)'; then
+if git diff --cached --name-only | grep -qE '^(src/fptctl/|scripts/skill_docs\.py|skills/fptctl/|parity/dimensions\.toml)'; then
     if ! uv run --quiet python -m scripts.skill_docs --check >/dev/null 2>&1; then
         uv run --quiet python -m scripts.skill_docs
         echo "pre-commit: the skill docs were stale and have been regenerated." >&2
-        echo "Review them, 'git add skills/fpt', and commit again." >&2
+        echo "Review them, 'git add skills/fptctl', and commit again." >&2
         exit 1
     fi
 fi

@@ -3,15 +3,17 @@ from pathlib import Path
 
 import pytest
 
-from fpt.config import Config, Profile, default_config_path, load_config, save_config
-from fpt.errors import UsageError
+from fptctl.config import Config, Profile, default_config_path, load_config, save_config
+from fptctl.errors import UsageError
 
-STUDIO = Profile(name="studio", site="https://studio.example.com", auth="script", script_name="fpt")
+STUDIO = Profile(
+    name="studio", site="https://studio.example.com", auth="script", script_name="fptctl"
+)
 ARTIST = Profile(name="artist", site="https://studio.example.com", auth="user", login="ada")
 
 
 def test_identity_depends_on_auth_type() -> None:
-    assert STUDIO.identity == "fpt"
+    assert STUDIO.identity == "fptctl"
     assert ARTIST.identity == "ada"
     assert Profile(name="s", site="https://x", auth="session").identity is None
 
@@ -74,7 +76,7 @@ def test_saved_file_is_private_and_has_no_null_fields(tmp_path: Path) -> None:
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
     text = path.read_text()
     assert "login" not in text
-    assert 'script_name = "fpt"' in text
+    assert 'script_name = "fptctl"' in text
 
 
 def test_load_rejects_invalid_toml(tmp_path: Path) -> None:
@@ -93,8 +95,8 @@ def test_load_rejects_unknown_auth_type(tmp_path: Path) -> None:
 
 def test_default_config_path_precedence() -> None:
     home = Path.home()
-    assert default_config_path({}) == home / ".config" / "fpt" / "config.toml"
-    assert default_config_path({"XDG_CONFIG_HOME": "/xdg"}) == Path("/xdg/fpt/config.toml")
-    assert default_config_path({"FPT_CONFIG": "/a/b.toml", "XDG_CONFIG_HOME": "/xdg"}) == Path(
+    assert default_config_path({}) == home / ".config" / "fptctl" / "config.toml"
+    assert default_config_path({"XDG_CONFIG_HOME": "/xdg"}) == Path("/xdg/fptctl/config.toml")
+    assert default_config_path({"FPTCTL_CONFIG": "/a/b.toml", "XDG_CONFIG_HOME": "/xdg"}) == Path(
         "/a/b.toml"
     )

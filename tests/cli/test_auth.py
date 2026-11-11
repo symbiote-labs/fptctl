@@ -2,7 +2,7 @@ from typing import Any
 
 import shotgun_api3
 
-from fpt.config import Config, Profile, load_config
+from fptctl.config import Config, Profile, load_config
 
 SITE = "https://studio.example.com"
 LOGIN_SCRIPT = ("auth", "login", "--site", "studio.example.com", "--script-name", "bot")

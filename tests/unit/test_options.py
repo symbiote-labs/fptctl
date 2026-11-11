@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from fpt.commands._options import (
+from fptctl.commands._options import (
     json_object,
     parse_created_at,
     parse_entity,
@@ -10,7 +10,7 @@ from fpt.commands._options import (
     query_kwargs,
     split_list,
 )
-from fpt.errors import UsageError
+from fptctl.errors import UsageError
 
 PRESETS = (
     '[{"preset_name": "LATEST", "latest_by": "BY_PIPELINE_STEP_NUMBER_AND_ENTITIES_CREATED_AT"}]'

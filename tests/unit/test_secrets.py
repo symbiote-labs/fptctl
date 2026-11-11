@@ -2,8 +2,8 @@ import keyring
 import keyring.errors
 import pytest
 
-from fpt.errors import AuthError
-from fpt.secrets import SERVICE, KeyringStore, MemoryStore
+from fptctl.errors import AuthError
+from fptctl.secrets import SERVICE, KeyringStore, MemoryStore
 
 
 @pytest.fixture
@@ -52,5 +52,5 @@ def test_keyring_failure_becomes_auth_error(monkeypatch: pytest.MonkeyPatch) -> 
         raise keyring.errors.NoKeyringError("no backend")
 
     monkeypatch.setattr(keyring, "get_password", broken)
-    with pytest.raises(AuthError, match="FPT_API_KEY"):
+    with pytest.raises(AuthError, match="FPTCTL_API_KEY"):
         KeyringStore().get("studio")

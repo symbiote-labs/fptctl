@@ -6,8 +6,8 @@ from typing import Any
 
 import pytest
 
-from fpt.errors import UsageError
-from fpt.wire import dumps, from_wire, load_json_arg, to_wire
+from fptctl.errors import UsageError
+from fptctl.wire import dumps, from_wire, load_json_arg, to_wire
 
 PLUS_5 = timezone(timedelta(hours=5))
 

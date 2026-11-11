@@ -3,8 +3,8 @@ from typing import Any
 
 import pytest
 
-from fpt.data import build_data, parse_set
-from fpt.errors import UsageError
+from fptctl.data import build_data, parse_set
+from fptctl.errors import UsageError
 
 
 @pytest.mark.parametrize(

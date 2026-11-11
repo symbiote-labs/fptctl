@@ -1,4 +1,4 @@
-"""Check PyPI for a shotgun-api3 release newer than fpt's pin, and report how its API changed.
+"""Check PyPI for a shotgun-api3 release newer than fptctl's pin, and report how its API changed.
 
     uv run python -m scripts.library_watch          # print the report
     uv run python -m scripts.library_watch --report-dir out  # also write out/report.json
@@ -7,7 +7,7 @@
 The report lists the methods and parameters that were added, removed or changed between the
 pinned version and the new one, read from both versions by scripts/api_signatures.py. The
 parity inventory turns each of those into burndown items, so this is the to-do list for the
-upgrade. The skill skills/fpt-library-upgrade describes the rest.
+upgrade. The skill skills/fptctl-library-upgrade describes the rest.
 """
 
 from __future__ import annotations
@@ -119,7 +119,7 @@ def issue_title(version: str) -> str:
 
 def render_report(pinned: str, latest: str, diff: ApiDiff) -> str:
     lines = [
-        f"shotgun-api3 **{latest}** is on PyPI. fpt pins **{pinned}**.",
+        f"shotgun-api3 **{latest}** is on PyPI. fptctl pins **{pinned}**.",
         "",
         f"What changed upstream: [HISTORY.rst]({HISTORY_URL}).",
         "",
@@ -139,12 +139,12 @@ def render_report(pinned: str, latest: str, diff: ApiDiff) -> str:
         "",
         "## Upgrade",
         "",
-        "Follow `skills/fpt-library-upgrade/SKILL.md`:",
+        "Follow `skills/fptctl-library-upgrade/SKILL.md`:",
         "",
         f"- [ ] pin `shotgun-api3=={latest}` and update the lock file",
         "- [ ] cover every new burndown item (a command option, or an `api call` case)",
         "- [ ] parity: `burndown --strict` exits 0 at the release commit",
-        "- [ ] release with `skills/fpt-release/SKILL.md`",
+        "- [ ] release with `skills/fptctl-release/SKILL.md`",
     ]
     return "\n".join(lines) + "\n"
 

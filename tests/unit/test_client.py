@@ -6,26 +6,26 @@ from xmlrpc.client import ProtocolError
 import pytest
 import shotgun_api3
 
-from fpt import __version__
-from fpt.client import (
+from fptctl import __version__
+from fptctl.client import (
     Credentials,
     build_client,
     normalize_site,
     resolve_credentials,
     translate_error,
 )
-from fpt.config import Config, Profile
-from fpt.errors import ApiFaultError, AuthError, FptError, NetworkError, UsageError
-from fpt.secrets import MemoryStore
+from fptctl.config import Config, Profile
+from fptctl.errors import ApiFaultError, AuthError, FptError, NetworkError, UsageError
+from fptctl.secrets import MemoryStore
 
 STUDIO = Profile(name="studio", site="https://studio.example.com", auth="script", script_name="bot")
 ARTIST = Profile(name="artist", site="https://studio.example.com", auth="user", login="ada")
 CONFIG = Config().with_profile(STUDIO).with_profile(ARTIST)
 SECRETS = MemoryStore({"studio": "studio-key", "artist": "ada-pw"})
 SCRIPT_ENV = {
-    "FPT_SITE": "https://env.example.com",
-    "FPT_SCRIPT_NAME": "envbot",
-    "FPT_API_KEY": "env-key",
+    "FPTCTL_SITE": "https://env.example.com",
+    "FPTCTL_SCRIPT_NAME": "envbot",
+    "FPTCTL_API_KEY": "env-key",
 }
 
 
@@ -91,7 +91,7 @@ def test_profile_flag_beats_env_credentials() -> None:
 
 
 def test_fpt_profile_env_selects_a_profile() -> None:
-    assert resolve({"FPT_PROFILE": "artist"}).source == "profile:artist"
+    assert resolve({"FPTCTL_PROFILE": "artist"}).source == "profile:artist"
 
 
 def test_site_flag_overrides_site_from_any_source() -> None:
@@ -100,18 +100,18 @@ def test_site_flag_overrides_site_from_any_source() -> None:
 
 
 def test_env_user_and_session_credentials() -> None:
-    user = resolve({"FPT_SITE": "x.example.com", "FPT_LOGIN": "ada", "FPT_PASSWORD": "pw"})
+    user = resolve({"FPTCTL_SITE": "x.example.com", "FPTCTL_LOGIN": "ada", "FPTCTL_PASSWORD": "pw"})
     assert (user.auth, user.login, user.secret) == ("user", "ada", "pw")
-    session = resolve({"FPT_SITE": "x.example.com", "FPT_SESSION_TOKEN": "tok"})
+    session = resolve({"FPTCTL_SITE": "x.example.com", "FPTCTL_SESSION_TOKEN": "tok"})
     assert (session.auth, session.secret, session.identity) == ("session", "tok", None)
 
 
 @pytest.mark.parametrize(
     ("env", "message"),
     [
-        ({"FPT_SITE": "x", "FPT_API_KEY": "k"}, "FPT_SCRIPT_NAME and FPT_API_KEY"),
-        ({"FPT_SITE": "x", "FPT_LOGIN": "ada"}, "FPT_LOGIN and FPT_PASSWORD"),
-        ({"FPT_SCRIPT_NAME": "b", "FPT_API_KEY": "k"}, "FPT_SITE"),
+        ({"FPTCTL_SITE": "x", "FPTCTL_API_KEY": "k"}, "FPTCTL_SCRIPT_NAME and FPTCTL_API_KEY"),
+        ({"FPTCTL_SITE": "x", "FPTCTL_LOGIN": "ada"}, "FPTCTL_LOGIN and FPTCTL_PASSWORD"),
+        ({"FPTCTL_SCRIPT_NAME": "b", "FPTCTL_API_KEY": "k"}, "FPTCTL_SITE"),
     ],
 )
 def test_incomplete_env_credentials_are_auth_errors(env: dict[str, str], message: str) -> None:
@@ -120,7 +120,7 @@ def test_incomplete_env_credentials_are_auth_errors(env: dict[str, str], message
 
 
 def test_no_credentials_anywhere_is_an_auth_error() -> None:
-    with pytest.raises(AuthError, match="fpt auth login"):
+    with pytest.raises(AuthError, match="fptctl auth login"):
         resolve(config=Config())
 
 
@@ -171,7 +171,7 @@ def test_build_client_for_script_auth(recorded: list[RecordingShotgun]) -> None:
         "sudo_as_login": "ada",
         "connect": False,
     }
-    assert client.agents == [f"fpt/{__version__}"]
+    assert client.agents == [f"fptctl/{__version__}"]
 
 
 def test_build_client_for_user_auth(recorded: list[RecordingShotgun]) -> None:
@@ -182,7 +182,7 @@ def test_build_client_for_user_auth(recorded: list[RecordingShotgun]) -> None:
 
 
 def test_build_client_for_session_auth(recorded: list[RecordingShotgun]) -> None:
-    build_client(resolve({"FPT_SITE": "x.example.com", "FPT_SESSION_TOKEN": "tok"}))
+    build_client(resolve({"FPTCTL_SITE": "x.example.com", "FPTCTL_SESSION_TOKEN": "tok"}))
     assert recorded[0].kwargs["session_token"] == "tok"
 
 
@@ -190,11 +190,11 @@ def test_build_client_passes_proxy_ca_certs_and_one_time_code(
     recorded: list[RecordingShotgun],
 ) -> None:
     env = {
-        "FPT_SITE": "x.example.com",
-        "FPT_LOGIN": "ada",
-        "FPT_PASSWORD": "pw",
-        "FPT_HTTP_PROXY": "proxy:3128",
-        "FPT_CA_CERTS": "/etc/ca.pem",
+        "FPTCTL_SITE": "x.example.com",
+        "FPTCTL_LOGIN": "ada",
+        "FPTCTL_PASSWORD": "pw",
+        "FPTCTL_HTTP_PROXY": "proxy:3128",
+        "FPTCTL_CA_CERTS": "/etc/ca.pem",
     }
     from dataclasses import replace
 

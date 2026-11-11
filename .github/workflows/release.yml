@@ -1,7 +1,7 @@
 name: Release
 
 # Pushing a tag vX.Y.Z builds that commit and creates a draft GitHub release with the wheel and
-# the sdist. A maintainer writes the notes and publishes it (skills/fpt-release).
+# the sdist. A maintainer writes the notes and publishes it (skills/fptctl-release).
 on:
   push:
     tags: ["v*"]
@@ -18,7 +18,7 @@ jobs:
       - run: uv sync --locked
       - name: The tag matches the package version
         run: |
-          version=$(uv run python -c "import fpt; print(fpt.__version__)")
+          version=$(uv run python -c "import fptctl; print(fptctl.__version__)")
           test "${GITHUB_REF_NAME}" = "v${version}" || {
             echo "tag ${GITHUB_REF_NAME} does not match version ${version}"; exit 1; }
       - run: uv run ruff format --check .
@@ -32,4 +32,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF_NAME}" dist/* --draft --verify-tag \
-            --title "fpt ${GITHUB_REF_NAME#v}" --generate-notes
+            --title "fptctl ${GITHUB_REF_NAME#v}" --generate-notes
