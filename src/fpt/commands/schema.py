@@ -37,7 +37,16 @@ def schema() -> None:
 @project_option
 @click.pass_obj
 def entities(app: AppContext, project: str | None) -> None:
-    """Every entity type and its properties."""
+    """List every entity type and its properties.
+
+    Prints what the library's schema_entity_read returns: each entity type's display name,
+    visibility and other properties. With --project, the schema as that project sees it.
+
+    \b
+    Examples:
+      fpt schema entities
+      fpt schema entities --project Project:70
+    """
     run(app, "schema_entity_read", _project({}, project))
 
 
@@ -45,7 +54,15 @@ def entities(app: AppContext, project: str | None) -> None:
 @project_option
 @click.pass_obj
 def read(app: AppContext, project: str | None) -> None:
-    """The whole schema: every field of every entity type."""
+    """Read the whole schema: every field of every entity type.
+
+    The result is large, so prefer `schema fields` for one entity type. With --project, the
+    schema as that project sees it.
+
+    \b
+    Examples:
+      fpt schema read --project Project:70
+    """
     run(app, "schema_read", _project({}, project))
 
 
@@ -55,7 +72,17 @@ def read(app: AppContext, project: str | None) -> None:
 @project_option
 @click.pass_obj
 def fields(app: AppContext, entity_type: str, field_name: str | None, project: str | None) -> None:
-    """The fields of TYPE, or only FIELD."""
+    """Read the fields of TYPE, or only FIELD.
+
+    TYPE is an entity type and FIELD a field name such as sg_status_list. Each field comes
+    with its data type, whether it is editable, its valid values and its other properties.
+    With --project, the fields as that project sees them.
+
+    \b
+    Examples:
+      fpt schema fields Shot
+      fpt schema fields Shot sg_status_list --project Project:70
+    """
     kwargs: dict[str, Any] = {"entity_type": entity_type}
     if field_name is not None:
         kwargs["field_name"] = field_name
@@ -77,7 +104,18 @@ def field_create(
     raw_properties: str | None,
     dry_run: bool,
 ) -> None:
-    """Create a field on TYPE; prints the new field's name."""
+    """Create a field on TYPE and print its name.
+
+    TYPE is an entity type, DATA_TYPE a field data type such as text, number, list or
+    entity, and DISPLAY_NAME the name people see. The server derives the field name
+    (sg_...) from DISPLAY_NAME. --properties sets more, such as {"valid_types": ["Asset"]}
+    for an entity field.
+
+    \b
+    Examples:
+      fpt schema field-create Shot text "Review notes"
+      fpt schema field-create Shot entity "Hero asset" --properties '{"valid_types": ["Asset"]}'
+    """
     kwargs: dict[str, Any] = {
         "entity_type": entity_type,
         "data_type": data_type,
@@ -105,7 +143,17 @@ def field_update(
     project: str | None,
     dry_run: bool,
 ) -> None:
-    """Change the properties of FIELD on TYPE."""
+    """Change the properties of FIELD on TYPE.
+
+    TYPE is an entity type and FIELD the field name. --properties gives the properties to
+    set as a JSON object, such as {"description": "..."}. With --project the change applies
+    to that project only, for the properties that can differ per project, such as visible.
+
+    \b
+    Examples:
+      fpt schema field-update Shot sg_review_notes --properties '{"description": "From review"}'
+      fpt schema field-update Shot sg_review_notes --project Project:70 --properties @hide.json
+    """
     kwargs: dict[str, Any] = {
         "entity_type": entity_type,
         "field_name": field_name,
@@ -123,7 +171,16 @@ def field_update(
 def field_delete(
     app: AppContext, entity_type: str, field_name: str, yes: bool, dry_run: bool
 ) -> None:
-    """Delete FIELD from TYPE."""
+    """Delete FIELD from TYPE.
+
+    TYPE is an entity type and FIELD the field name. The field goes to the site's Trash,
+    and its name stays taken until someone deletes it there for good in the web UI. On a
+    terminal, field-delete asks for confirmation; anywhere else it needs --yes.
+
+    \b
+    Examples:
+      fpt schema field-delete Shot sg_review_notes --yes
+    """
     if not (yes or dry_run):
         confirm("schema field-delete", f"Delete field {entity_type}.{field_name}?")
     kwargs = {"entity_type": entity_type, "field_name": field_name}

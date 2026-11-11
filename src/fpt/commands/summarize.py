@@ -1,4 +1,4 @@
-"""summarize: aggregate values over the entities a filter matches."""
+"""Summarize command: aggregate values over the entities a filter matches."""
 
 from __future__ import annotations
 
@@ -36,7 +36,18 @@ def summarize(
     raw_grouping: str | None,
     **options: Any,
 ) -> None:
-    """Summarize fields of the TYPE entities that match the filters."""
+    """Summarize fields of the TYPE entities that match the filters.
+
+    TYPE is an entity type, filtered as with find. --summary-fields lists the aggregates as
+    the library takes them, such as [{"field": "id", "type": "count"}], and --grouping groups
+    them, such as [{"field": "sg_status_list", "type": "exact", "direction": "asc"}]. Prints
+    the summaries, and the groups when there is a grouping.
+
+    \b
+    Examples:
+      fpt summarize Shot -f 'project is Project:70' --summary-fields @count.json
+      fpt summarize Task --summary-fields @sums.json --grouping @groups.json
+    """
     kwargs: dict[str, Any] = {
         "entity_type": entity_type,
         **query_kwargs(**options),

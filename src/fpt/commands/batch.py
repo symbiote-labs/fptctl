@@ -1,4 +1,4 @@
-"""batch: several create/update/delete requests in one transaction."""
+"""Batch command: several create, update and delete requests in one transaction."""
 
 from __future__ import annotations
 
@@ -49,5 +49,16 @@ def parse_requests(text: str) -> list[Any]:
 @dry_run_option
 @click.pass_obj
 def batch(app: AppContext, path: str, dry_run: bool) -> None:
-    """Run create/update/delete requests from FILE (or stdin) in one transaction."""
+    """Run create, update and delete requests from FILE in one transaction.
+
+    FILE holds a JSON array of requests, or one request object per line (NDJSON). Without
+    FILE, or with -, the requests are read from stdin. Each request is what the library's
+    batch takes, such as {"request_type": "create", "entity_type": "Shot", "data": {...}}.
+    Either every request succeeds or none does. Prints the list of results.
+
+    \b
+    Examples:
+      fpt batch requests.ndjson
+      fpt batch --dry-run - < requests.json
+    """
     run(app, "batch", {"requests": parse_requests(_read(path))}, dry_run=dry_run)

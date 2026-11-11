@@ -1,4 +1,4 @@
-"""Manage site profiles and credentials."""
+"""Auth commands: sign in, and list, switch, check and remove profiles."""
 
 from __future__ import annotations
 
@@ -83,7 +83,19 @@ def login(
     otp: str | None,
     no_verify: bool,
 ) -> None:
-    """Store credentials for a site. The secret is read from a prompt or stdin."""
+    """Store credentials for a site as a named profile.
+
+    Sign in one way: --script-name (an API script and its key), --login (a user and their
+    password) or --session (a session token). The secret is read from a prompt on a
+    terminal, or from stdin otherwise, and goes to the OS keychain; everything else goes to
+    the config file. With --otp, the 2FA code is used once and only the session it opens is
+    stored. The credentials are checked against the site unless --no-verify is given.
+
+    \b
+    Examples:
+      fpt auth login --site https://studio.shotgrid.autodesk.com --script-name my_script
+      fpt auth login --name me --site https://studio.shotgrid.autodesk.com --login jane --otp 123456
+    """
     interactive = sys.stdin.isatty()
     if not site:
         if not interactive:
@@ -132,7 +144,17 @@ def login(
 @click.argument("name", required=False)
 @click.pass_obj
 def logout(app: AppContext, name: str | None) -> None:
-    """Remove a profile and its stored secret (the default profile if NAME is omitted)."""
+    """Remove a profile and its stored secret.
+
+    NAME is the profile to remove; without NAME, the default profile. The secret is deleted
+    from the keychain and the profile from the config file. Prints the removed profile and
+    the new default.
+
+    \b
+    Examples:
+      fpt auth logout me
+      fpt auth logout
+    """
     target = name or app.config.default
     if not target:
         raise UsageError("There is no profile to remove.")
@@ -145,7 +167,16 @@ def logout(app: AppContext, name: str | None) -> None:
 @auth.command("list")
 @click.pass_obj
 def list_profiles(app: AppContext) -> None:
-    """List stored profiles."""
+    """List the stored profiles.
+
+    Each profile shows its site, how it signs in (script, user or session), who it signs in
+    as, and whether it is the default. Secrets are never shown.
+
+    \b
+    Examples:
+      fpt auth list
+      fpt --format table auth list
+    """
     config = app.config
     app.emit(
         [
@@ -165,7 +196,15 @@ def list_profiles(app: AppContext) -> None:
 @click.argument("name")
 @click.pass_obj
 def use(app: AppContext, name: str) -> None:
-    """Make NAME the default profile."""
+    """Make NAME the default profile.
+
+    NAME is a profile from `fpt auth list`. Commands use the default profile unless
+    --profile, the FPT_* credential variables or FPT_PROFILE choose another.
+
+    \b
+    Examples:
+      fpt auth use me
+    """
     config = app.config.with_default(name)
     save_config(config, app.deps.config_path)
     app.emit({"default": config.default})
@@ -174,7 +213,17 @@ def use(app: AppContext, name: str) -> None:
 @auth.command()
 @click.pass_obj
 def status(app: AppContext) -> None:
-    """Check that the current credentials work."""
+    """Check that the current credentials work.
+
+    Makes one authenticated request with the credentials this command line resolves to:
+    --profile, the FPT_* variables, FPT_PROFILE or the default profile, in that order.
+    Prints the site, the auth type, the identity and where the credentials came from.
+
+    \b
+    Examples:
+      fpt auth status
+      fpt --profile me auth status
+    """
     credentials = app.credentials
     _verify(app.client)
     app.emit(
@@ -191,5 +240,14 @@ def status(app: AppContext) -> None:
 @auth.command()
 @click.pass_obj
 def token(app: AppContext) -> None:
-    """Print a session token for the current credentials."""
+    """Print a session token for the current credentials.
+
+    The token can sign in later with FPT_SESSION_TOKEN or `auth login --session`, without a
+    password. Each call opens a new session, so the token is different every time.
+
+    \b
+    Examples:
+      fpt auth token
+      fpt --profile me auth token
+    """
     app.emit(app.client.get_session_token())
