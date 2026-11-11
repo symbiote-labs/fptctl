@@ -124,5 +124,12 @@ def test_skill_entry_point_is_small_and_has_frontmatter(skill: Path) -> None:
     front = re.match(r"---\n(.*?)\n---\n", text, re.DOTALL)
     assert front, f"{skill.parent.name}: SKILL.md needs YAML frontmatter"
     assert re.search(rf"^name: {re.escape(skill.parent.name)}$", front.group(1), re.MULTILINE)
-    assert re.search(r"^description: \S", front.group(1), re.MULTILINE)
+    description = re.search(r"^description: (.+)$", front.group(1), re.MULTILINE)
+    assert description, f"{skill.parent.name}: SKILL.md needs a description"
+    value = description.group(1)
+    # An unquoted ": " or " #" makes the frontmatter invalid YAML, and installers skip the skill.
+    if value[0] not in "'\"":
+        assert ": " not in value and " #" not in value, (
+            f"{skill.parent.name}: quote the description, or drop its ': ' and ' #'"
+        )
     assert len(text.splitlines()) < 500, f"{skill.parent.name}: keep SKILL.md under 500 lines"

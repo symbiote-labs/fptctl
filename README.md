@@ -22,6 +22,17 @@ fpt --version
 
 From a checkout, `uv tool install .` (or `pip install .`).
 
+## Agent skill
+
+`skills/fpt` is an agent skill that teaches an AI coding agent to install and use `fpt`. Add it to
+a project with:
+
+```shell
+npx skills add symbiote-labs/fpt-cli --skill fpt
+```
+
+Its command reference is generated from the command docstrings, so it matches `fpt --help`.
+
 ## Authentication
 
 Store credentials once as a named profile. The site and the non-secret settings go to
@@ -175,9 +186,15 @@ _FPT_COMPLETE=fish_source fpt | source      # ~/.config/fish/completions/fpt.fis
 
 ```shell
 uv sync
-uv run ruff format --check . && uv run ruff check . && uv run mypy src parity
+git config core.hooksPath .githooks   # once per clone: keeps the skill docs current
+uv run ruff format --check . && uv run ruff check . && uv run mypy src parity scripts
 uv run pytest --cov=fpt
 ```
+
+Each command documents itself: its docstring has a summary, a description that names every
+argument, and examples. `uv run python -m scripts.skill_docs` renders those docstrings into the
+skill under `skills/fpt/`. Tests fail when a command lacks any of them, when an example does not
+parse, or when the generated files are stale, and CI runs the same checks on every push.
 
 `parity/` checks every library method and parameter against a live sandbox site: it calls the library
 directly and through `fpt`, and compares both the requests and the results. It needs
@@ -188,6 +205,12 @@ directly and through `fpt`, and compares both the requests and the results. It n
 uv run python -m parity.runner
 uv run python -m parity.burndown --strict
 ```
+
+On GitHub, the **Parity** workflow runs the same suite on demand with the repository's secrets.
+The **Library watch** workflow opens an issue when a new `shotgun_api3` release appears, and
+pushing a `vX.Y.Z` tag drafts a release. The maintainer skills `skills/fpt-library-upgrade` and
+`skills/fpt-release` describe those workflows. They are hidden from a normal `npx skills add`;
+install them with `INSTALL_INTERNAL_SKILLS=1`.
 
 ## License
 
