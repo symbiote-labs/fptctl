@@ -1,4 +1,4 @@
-"""Run every parity case against the sandbox: the library directly, then the fpt binary.
+"""Run every parity case against the sandbox: the library directly, then the fptctl binary.
 
 `uv run python -m parity.runner`. Needs FPT_TEST_SITE, FPT_TEST_SCRIPT_NAME and FPT_TEST_API_KEY;
 FPT_TEST_LOGIN and FPT_TEST_PASSWORD for cases with "auth": "user". Cases with "auth": "session"
@@ -44,7 +44,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CASES_DIR = REPO_ROOT / "parity" / "cases"
 RESULTS_DIR = REPO_ROOT / "parity" / "results"
 
-# The trace contract with fpt's client.py: these names are redacted to this value.
+# The trace contract with fptctl's client.py: these names are redacted to this value.
 SECRET_ARGUMENTS = frozenset(
     {"api_key", "password", "session_token", "auth_token", "user_password"}
 )
@@ -190,7 +190,7 @@ def _bind(func: Callable[..., Any], kwargs: Mapping[str, Any]) -> dict[str, Any]
 
 
 def expected_args(func: Callable[..., Any], kwargs: Mapping[str, Any]) -> dict[str, Any]:
-    """What fpt's trace must show for this call: bound, defaults filled, redacted, wire format."""
+    """What fptctl's trace must show for a call: bound, defaults filled, redacted, wire format."""
     bound = _bind(func, kwargs)
     redacted = {
         name: REDACTED if name in SECRET_ARGUMENTS and value is not None else value
@@ -340,19 +340,19 @@ def cli_env(
     config_path: Path,
     extra: Mapping[str, str] | None = None,
 ) -> dict[str, str]:
-    env = {key: value for key, value in base.items() if not key.startswith("FPT_")}
+    env = {key: value for key, value in base.items() if not key.startswith(("FPT_", "FPTCTL_"))}
     env.update(
-        FPT_SITE=creds.site,
-        FPT_CONFIG=str(config_path),
-        FPT_TRACE_FILE=str(trace_path),
+        FPTCTL_SITE=creds.site,
+        FPTCTL_CONFIG=str(config_path),
+        FPTCTL_TRACE_FILE=str(trace_path),
         NO_COLOR="1",
     )
     if auth == "user":
-        env.update(FPT_LOGIN=creds.login or "", FPT_PASSWORD=creds.password or "")
+        env.update(FPTCTL_LOGIN=creds.login or "", FPTCTL_PASSWORD=creds.password or "")
     elif auth == "session":
-        env.update(FPT_SESSION_TOKEN=creds.session_token or "")
+        env.update(FPTCTL_SESSION_TOKEN=creds.session_token or "")
     else:
-        env.update(FPT_SCRIPT_NAME=creds.script_name, FPT_API_KEY=creds.api_key)
+        env.update(FPTCTL_SCRIPT_NAME=creds.script_name, FPTCTL_API_KEY=creds.api_key)
     env.update(extra or {})
     return env
 
@@ -370,7 +370,7 @@ def subprocess_cli(creds: Credentials, workdir: Path) -> RunCli:
             extra=extra,
         )
         done = subprocess.run(
-            ["uv", "run", "--quiet", "fpt", "--format", "json", *argv],
+            ["uv", "run", "--quiet", "fptctl", "--format", "json", *argv],
             cwd=REPO_ROOT,
             env=env,
             input=stdin.encode() if stdin is not None else b"",

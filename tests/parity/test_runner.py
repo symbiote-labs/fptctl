@@ -110,8 +110,8 @@ GOOD = {"id": "a", "method": "info", "mode": "identical", "args": {}, "argv": ["
         ({"method": "frobnicate"}, "frobnicate"),
         ({"argv": "info"}, "argv"),
         ({"auth": "token"}, "auth"),
-        ({"env": ["FPT_CA_CERTS"]}, "env"),
-        ({"env": {"FPT_CA_CERTS": 1}}, "env"),
+        ({"env": ["FPTCTL_CA_CERTS"]}, "env"),
+        ({"env": {"FPTCTL_CA_CERTS": 1}}, "env"),
     ],
 )
 def test_case_validation(tmp_path: Path, change: dict[str, Any], message: str) -> None:
@@ -131,19 +131,19 @@ def test_real_case_files_load() -> None:
 
 def test_cli_env_drops_inherited_fpt_variables(tmp_path: Path) -> None:
     env = cli_env(
-        {"PATH": "/bin", "FPT_PROFILE": "studio", "FPT_TEST_API_KEY": "k"},
+        {"PATH": "/bin", "FPTCTL_PROFILE": "studio", "FPT_TEST_API_KEY": "k"},
         CREDS,
         "script",
         trace_path=tmp_path / "t.jsonl",
         config_path=tmp_path / "missing.toml",
     )
-    assert env["PATH"] == "/bin" and "FPT_PROFILE" not in env and "FPT_TEST_API_KEY" not in env
-    assert (env["FPT_SITE"], env["FPT_SCRIPT_NAME"], env["FPT_API_KEY"]) == (
+    assert env["PATH"] == "/bin" and "FPTCTL_PROFILE" not in env and "FPT_TEST_API_KEY" not in env
+    assert (env["FPTCTL_SITE"], env["FPTCTL_SCRIPT_NAME"], env["FPTCTL_API_KEY"]) == (
         "https://x.example.com",
         "bot",
         "k",
     )
-    assert env["FPT_CONFIG"].endswith("missing.toml") and env["NO_COLOR"] == "1"
+    assert env["FPTCTL_CONFIG"].endswith("missing.toml") and env["NO_COLOR"] == "1"
     user = cli_env(
         {},
         Credentials("https://x", "bot", "k", login="ada", password="pw"),
@@ -151,8 +151,8 @@ def test_cli_env_drops_inherited_fpt_variables(tmp_path: Path) -> None:
         trace_path=tmp_path / "t",
         config_path=tmp_path / "c",
     )
-    assert (user["FPT_LOGIN"], user["FPT_PASSWORD"]) == ("ada", "pw")
-    assert "FPT_API_KEY" not in user
+    assert (user["FPTCTL_LOGIN"], user["FPTCTL_PASSWORD"]) == ("ada", "pw")
+    assert "FPTCTL_API_KEY" not in user
 
 
 def fake_cli(
@@ -258,7 +258,7 @@ def test_run_case_passes_every_argv_item_as_text() -> None:
 
 
 def test_session_and_env_cases_load(tmp_path: Path) -> None:
-    case = {**GOOD, "auth": "session", "env": {"FPT_CA_CERTS": "${ca_certs}"}}
+    case = {**GOOD, "auth": "session", "env": {"FPTCTL_CA_CERTS": "${ca_certs}"}}
     assert load_cases(write_cases(tmp_path, [case]), {"info"}) == [case]
 
 
@@ -270,11 +270,13 @@ def test_cli_env_session_auth_and_extra_variables(tmp_path: Path) -> None:
         "session",
         trace_path=tmp_path / "t",
         config_path=tmp_path / "c",
-        extra={"FPT_CA_CERTS": "/certs.pem"},
+        extra={"FPTCTL_CA_CERTS": "/certs.pem"},
     )
-    assert env["FPT_SESSION_TOKEN"] == "tok"
-    assert env["FPT_CA_CERTS"] == "/certs.pem"
-    assert not {"FPT_SCRIPT_NAME", "FPT_API_KEY", "FPT_LOGIN", "FPT_PASSWORD"} & set(env)
+    assert env["FPTCTL_SESSION_TOKEN"] == "tok"
+    assert env["FPTCTL_CA_CERTS"] == "/certs.pem"
+    assert not {"FPTCTL_SCRIPT_NAME", "FPTCTL_API_KEY", "FPTCTL_LOGIN", "FPTCTL_PASSWORD"} & set(
+        env
+    )
 
 
 def test_run_case_resolves_env_and_uses_the_session_client() -> None:
@@ -285,7 +287,7 @@ def test_run_case_resolves_env_and_uses_the_session_client() -> None:
         seen.append((auth, env))
         return respond(argv, stdin, auth, env)
 
-    case = {**GOOD, "auth": "session", "env": {"FPT_CA_CERTS": "${ca_certs}"}}
+    case = {**GOOD, "auth": "session", "env": {"FPTCTL_CA_CERTS": "${ca_certs}"}}
     context = {**CONTEXT, "ca_certs": "/certs.pem"}
     record = run_case(
         case,
@@ -298,7 +300,7 @@ def test_run_case_resolves_env_and_uses_the_session_client() -> None:
         created=[],
     )
     assert record["status"] == "pass", record["problems"]
-    assert seen == [("session", {"FPT_CA_CERTS": "/certs.pem"})]
+    assert seen == [("session", {"FPTCTL_CA_CERTS": "/certs.pem"})]
     blocked = run(case, cli)
     assert blocked["status"] == "blocked"
     assert blocked["problems"] == ["no session credentials in this run"]
