@@ -1,5 +1,6 @@
 import inspect
 import re
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -102,9 +103,34 @@ def test_api_of_keeps_github_tokens_away_from_the_new_library(
     assert "PATH" in seen["env"], "the rest of the environment still reaches uv"
 
 
-def test_report_keeps_upstream_backticks_out_of_code_spans() -> None:
-    diff = library_watch.ApiDiff(changed={"find": ("(a)", "(a, b='`x`')")})
+def test_report_fences_upstream_text_so_it_cannot_become_markdown() -> None:
+    hostile = "(a, b='```')\n## Injected heading\n[click](https://example.com)"
+    diff = library_watch.ApiDiff(changed={"find": ("(a)", hostile)})
 
     report = library_watch.render_report("1.0.0", "1.0.1", diff)
 
-    assert "(a, b=''x'')" in report
+    assert "\n## Injected heading" not in report, "a newline from upstream started a heading"
+    assert "````text" in report, "the fence must be longer than the longest backtick run"
+    assert "  after  (a, b='```') ## Injected heading [click](https://example.com)" in report
+
+
+def test_report_dir_then_open_issue_hands_over_title_and_body(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(library_watch, "latest_version", lambda: "3.10.6")
+    monkeypatch.setattr(library_watch, "api_of", lambda version: api({"find": "()"}))
+    opened: list[tuple[str, str]] = []
+    monkeypatch.setattr(library_watch, "open_issue", lambda t, b: opened.append((t, b)) or "ok")
+
+    library_watch.main(["--report-dir", str(tmp_path)])
+    library_watch.main(["--open-issue", str(tmp_path)])
+
+    assert opened and opened[0][0] == "shotgun-api3 3.10.6 is out"
+    assert "fpt pins **3.10.5**" in opened[0][1]
+
+
+def test_open_issue_does_nothing_when_no_release_was_reported(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert library_watch.main(["--open-issue", str(tmp_path)]) == 0
+    assert "nothing to open" in capsys.readouterr().out

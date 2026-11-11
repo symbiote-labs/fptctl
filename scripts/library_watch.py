@@ -1,7 +1,8 @@
 """Check PyPI for a shotgun-api3 release newer than fpt's pin, and report how its API changed.
 
     uv run python -m scripts.library_watch          # print the report
-    uv run python -m scripts.library_watch --issue  # also open a GitHub issue, once per version
+    uv run python -m scripts.library_watch --report-dir out  # also write the issue to out/
+    python -m scripts.library_watch --open-issue out         # open it on GitHub, once per version
 
 The report lists the methods and parameters that were added, removed or changed between the
 pinned version and the new one, read from both versions by scripts/api_signatures.py. The
@@ -99,9 +100,17 @@ def diff_api(old: dict[str, Any], new: dict[str, Any]) -> ApiDiff:
     )
 
 
-def _code(text: str) -> str:
-    """Text for a markdown code span: a backtick from upstream would end the span early."""
-    return text.replace("`", "'")
+def _one_line(text: str) -> str:
+    """Upstream text on one line: control characters and newlines become spaces."""
+    return " ".join(re.sub(r"[\x00-\x1f\x7f]", " ", text).split())
+
+
+def _fenced(lines: list[str]) -> list[str]:
+    """A code block whose fence is longer than any run of backticks in its content, so text
+    from the new library can never end the block early and become markdown."""
+    longest = max((len(run) for line in lines for run in re.findall(r"`+", line)), default=0)
+    fence = "`" * max(3, longest + 1)
+    return [f"{fence}text", *lines, fence]
 
 
 def issue_title(version: str) -> str:
@@ -117,14 +126,15 @@ def render_report(pinned: str, latest: str, diff: ApiDiff) -> str:
         "## Public API changes",
         "",
     ]
-    if diff.empty:
-        lines.append("None: no public method or signature changed.")
-    for name in diff.added:
-        lines.append(f"- added `{_code(name)}`")
-    for name in diff.removed:
-        lines.append(f"- removed `{_code(name)}`")
+    changes = [f"added    {_one_line(name)}" for name in diff.added]
+    changes += [f"removed  {_one_line(name)}" for name in diff.removed]
     for name, (before, after) in diff.changed.items():
-        lines.append(f"- changed `{_code(name)}`: `{_code(before)}` -> `{_code(after)}`")
+        changes += [
+            f"changed  {_one_line(name)}",
+            f"  before {_one_line(before)}",
+            f"  after  {_one_line(after)}",
+        ]
+    lines += _fenced(changes) if changes else ["None: no public method or signature changed."]
     lines += [
         "",
         "## Upgrade",
@@ -158,8 +168,23 @@ def open_issue(title: str, body: str) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Watch for shotgun-api3 releases.")
-    parser.add_argument("--issue", action="store_true", help="open a GitHub issue for it")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--report-dir", type=Path, help="also write title.txt and body.md there, for --open-issue"
+    )
+    group.add_argument(
+        "--open-issue", type=Path, metavar="DIR", help="open the issue a --report-dir run wrote"
+    )
     args = parser.parse_args(argv)
+    if args.open_issue is not None:
+        # Kept apart from the report run: this step holds the token, and runs no library code.
+        title_file = args.open_issue / "title.txt"
+        if not title_file.exists():
+            print("No new release was reported; nothing to open.")
+            return 0
+        body = (args.open_issue / "body.md").read_text(encoding="utf-8")
+        print(open_issue(title_file.read_text(encoding="utf-8").strip(), body))
+        return 0
     pinned = pinned_version(PYPROJECT.read_text(encoding="utf-8"))
     latest = latest_version()
     if version_key(latest) <= version_key(pinned):
@@ -167,8 +192,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     report = render_report(pinned, latest, diff_api(api_of(pinned), api_of(latest)))
     print(report)
-    if args.issue:
-        print(open_issue(issue_title(latest), report))
+    if args.report_dir is not None:
+        args.report_dir.mkdir(parents=True, exist_ok=True)
+        (args.report_dir / "title.txt").write_text(issue_title(latest) + "\n", encoding="utf-8")
+        (args.report_dir / "body.md").write_text(report, encoding="utf-8")
     return 0
 
 
