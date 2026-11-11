@@ -18,6 +18,11 @@ uv tool install git+https://github.com/symbiote-labs/fpt-cli
 # or: pip install git+https://github.com/symbiote-labs/fpt-cli
 ```
 
+Install from that URL, not by name: the PyPI package `fpt-cli` is an unrelated project. There is
+also a different ShotGrid tool called fpt-cli (a Rust CLI, `dcc-mcp/fpt-cli`) whose commands look
+like `fpt entity find`. Its syntax does not work here. If `fpt --help` lists `entity` rather than
+`find`, `get` and `create`, that other tool is installed.
+
 ## Sign in
 
 fpt takes credentials from the first of: `--profile NAME`; the `FPT_*` environment variables;
@@ -42,7 +47,9 @@ sign in rather than guessing. [references/auth.md](references/auth.md) has the d
 - **Errors** go to stderr, as one JSON object `{"error": {"type", "message", "details"}}` when
   stderr is not a terminal.
 - **Writes are safe to preview.** Every command that changes the site takes `--dry-run`, which
-  prints the library call and makes no request. Use it before any write you are unsure of.
+  makes no request and prints the library call it would make, as JSON:
+  `{"call": "update", "args": {"entity_type": "Shot", "entity_id": 1234, "data": {...}}}`.
+  Use it before any write you are unsure of, and check the `args` are what you meant.
 - **Deletes are soft.** `delete` retires an entity and `revive` brings it back. `delete` and
   `schema field-delete` need `--yes` when stdin is not a terminal.
 - **Missing is not an error.** `fpt get TYPE ID` prints `null` and exits 0 for a missing entity,
