@@ -1,0 +1,99 @@
+# Tables the library cannot be introspected for (spec, "What an item is").
+# Every table cites its source in [sources].
+
+[sources]
+surfaces = "spec, 'Core: designed commands'"
+not_exposed = "spec, 'Core: designed commands'; library deprecation notes"
+filter_operators = "https://developers.shotgridsoftware.com/python-api/reference.html, 'Valid Operators By Data Type' (page v3.10.4), read 2026-11-10"
+multi_arg_operators = "https://developers.shotgridsoftware.com/python-api/reference.html, 'Operators and Arguments' (page v3.10.4), read 2026-11-10: between/not_between take two values, in_last/not_in_last/in_next/not_in_next take [int, unit]"
+enums = "shotgun_api3 3.10.5 shotgun.py docstrings and code: find() order and filter_operator, summarize() summary_fields and grouping, batch() request_type; read 2026-11-10"
+
+[surfaces]
+# method = the fpt command that is its designed surface. Every other public method's surface is
+# `fpt api call METHOD`.
+info = "info"
+get_session_token = "auth token"
+find = "find"
+find_one = "get"
+create = "create"
+update = "update"
+delete = "delete"
+revive = "revive"
+batch = "batch"
+summarize = "summarize"
+schema_entity_read = "schema entities"
+schema_read = "schema read"
+schema_field_read = "schema fields"
+schema_field_create = "schema field-create"
+schema_field_update = "schema field-update"
+schema_field_delete = "schema field-delete"
+upload = "upload"
+upload_thumbnail = "thumbnail upload"
+upload_filmstrip_thumbnail = "thumbnail upload"
+share_thumbnail = "thumbnail share"
+download_attachment = "download"
+get_attachment_download_url = "attachment url"
+activity_stream_read = "activity"
+note_thread_read = "note thread"
+text_search = "search"
+follow = "follow"
+unfollow = "unfollow"
+followers = "followers"
+following = "following"
+
+[not_exposed]
+# "method.parameter" = reason. Reachable through `fpt api call` only.
+"download_attachment.attachment_id" = "deprecated by the library in favour of `attachment`"
+
+[multi_arg_operators]
+operators = ["between", "not_between", "in_last", "not_in_last", "in_next", "not_in_next"]
+
+[filter_operators]
+# data_type = [operators], one key per data type the reference lists. An empty list means the
+# reference says filtering by that data type is not supported.
+addressing = ["is", "is_not", "contains", "not_contains", "in", "type_is", "type_is_not", "name_contains", "name_not_contains", "name_starts_with", "name_ends_with"]
+checkbox = ["is", "is_not"]
+currency = ["is", "is_not", "less_than", "greater_than", "between", "not_between", "in", "not_in"]
+date = ["is", "is_not", "greater_than", "less_than", "in_last", "not_in_last", "in_next", "not_in_next", "in_calendar_day", "in_calendar_week", "in_calendar_month", "in_calendar_year", "between", "in", "not_in"]
+date_time = ["is", "is_not", "greater_than", "less_than", "in_last", "not_in_last", "in_next", "not_in_next", "in_calendar_day", "in_calendar_week", "in_calendar_month", "in_calendar_year", "between", "in", "not_in"]
+duration = ["is", "is_not", "greater_than", "less_than", "between", "in", "not_in"]
+entity = ["is", "is_not", "type_is", "type_is_not", "name_contains", "name_not_contains", "name_is", "in", "not_in"]
+float = ["is", "is_not", "greater_than", "less_than", "between", "in", "not_in"]
+image = ["is", "is_not"]
+list = ["is", "is_not", "in", "not_in"]
+multi_entity = ["is", "is_not", "type_is", "type_is_not", "name_contains", "name_not_contains", "in", "not_in"]
+number = ["is", "is_not", "less_than", "greater_than", "between", "not_between", "in", "not_in"]
+password = []
+percent = ["is", "is_not", "greater_than", "less_than", "between", "in", "not_in"]
+serializable = []
+status_list = ["is", "is_not", "in", "not_in"]
+summary = []
+tag_list = ["is", "is_not", "type_is", "type_is_not", "name_contains", "name_not_contains", "name_is", "in", "not_in"]
+text = ["is", "is_not", "contains", "not_contains", "starts_with", "ends_with", "in", "not_in"]
+timecode = ["is", "is_not", "greater_than", "less_than", "between", "in", "not_in"]
+url = []
+
+[enums]
+summary_type = ["record_count", "count", "sum", "maximum", "minimum", "average", "earliest", "latest", "percentage", "status_percentage", "status_list", "checked", "unchecked"]
+grouping_type = ["exact", "tens", "hundreds", "thousands", "tensofthousands", "hundredsofthousands", "millions", "day", "week", "month", "quarter", "year", "clustered_date", "oneday", "fivedays", "entitytype", "firstletter"]
+grouping_direction = ["asc", "desc"]
+batch_request_type = ["create", "update", "delete"]
+order_direction = ["asc", "desc"]
+filter_operator = ["all", "any"]
+
+[enum_params]
+# "method.path" = enum. "name[]" walks each element of a list.
+"summarize.summary_fields[].type" = "summary_type"
+"summarize.grouping[].type" = "grouping_type"
+"summarize.grouping[].direction" = "grouping_direction"
+"batch.requests[].request_type" = "batch_request_type"
+"find.order[].direction" = "order_direction"
+"find_one.order[].direction" = "order_direction"
+"find.filter_operator" = "filter_operator"
+"find_one.filter_operator" = "filter_operator"
+"summarize.filter_operator" = "filter_operator"
+# A filter_operator in a group inside a --filters list (owner decision, Phase 3, 2026-11-10).
+# The server accepts a group only as an element of the filter list, not as the whole list.
+"find.filters[].filter_operator" = "filter_operator"
+"find_one.filters[].filter_operator" = "filter_operator"
+"summarize.filters[].filter_operator" = "filter_operator"

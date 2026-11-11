@@ -1,0 +1,151 @@
+# Items accepted as not verifiable. Only the owner edits this file (spec, "Waivers").
+#
+# [[waiver]]
+# item = "method:connect"
+# reason = "..."
+# evidence = "..."
+
+# Accepted by the owner item by item, 2026-11-10 (Phase 2 classification).
+
+[[waiver]]
+item = "method:connect"
+reason = "returns None; the spec requires a non-empty direct result, so no case can pass"
+evidence = "parity case connect: the direct result is empty, which proves nothing"
+
+[[waiver]]
+item = "method:close"
+reason = "returns None; the spec requires a non-empty direct result, so no case can pass"
+evidence = "parity case close: the direct result is empty, which proves nothing"
+
+[[waiver]]
+item = "method:add_user_agent"
+reason = "returns None; the spec requires a non-empty direct result, so no case can pass"
+evidence = "parity case add_user_agent: the direct result is empty, which proves nothing"
+
+[[waiver]]
+item = "method:reset_user_agent"
+reason = "returns None; the spec requires a non-empty direct result, so no case can pass"
+evidence = "parity case reset_user_agent: the direct result is empty, which proves nothing"
+
+[[waiver]]
+item = "method:set_session_uuid"
+reason = "returns None; the spec requires a non-empty direct result, so no case can pass"
+evidence = "parity case set_session_uuid: the direct result is empty, which proves nothing"
+
+[[waiver]]
+item = "param:add_user_agent.agent"
+reason = "its method returns None (see method:add_user_agent)"
+evidence = "parity case add_user_agent"
+
+[[waiver]]
+item = "param:set_session_uuid.session_uuid"
+reason = "its method returns None (see method:set_session_uuid)"
+evidence = "parity case set_session_uuid"
+
+[[waiver]]
+item = "method:get_auth_cookie_handler"
+reason = "returns a urllib HTTPCookieProcessor, which has no wire form; fpt exits 1 by design"
+evidence = "parity case get_auth_cookie_handler: the direct result has no wire form, nothing to compare: no wire form for HTTPCookieProcessor"
+
+[[waiver]]
+item = "method:get_session_token"
+reason = "each connection gets a new session token, so the direct and CLI results always differ"
+evidence = "parity case get_session_token: $: direct \"8e310cdcb1d1913ee106ca3ce912226d\", CLI \"60effcf9bdaa705549df0afe0c0fe80b\""
+
+[[waiver]]
+item = "method:update_project_last_accessed"
+reason = "returns None; the spec requires a non-empty direct result"
+evidence = "parity case update_project_last_accessed: the direct result is empty, which proves nothing"
+
+[[waiver]]
+item = "param:update_project_last_accessed.project"
+reason = "its method returns None (see method:update_project_last_accessed)"
+evidence = "parity case update_project_last_accessed"
+
+[[waiver]]
+item = "param:update_project_last_accessed.user"
+reason = "its method returns None (see method:update_project_last_accessed)"
+evidence = "parity case update_project_last_accessed"
+
+[[waiver]]
+item = "method:export_page"
+reason = "needs a page prepared in the web UI; no fixture can create one through the API"
+evidence = "no API to create a Page with an exportable layout; listed as an expected waiver in the spec"
+
+[[waiver]]
+item = "param:export_page.page_id"
+reason = "its method needs a page prepared in the web UI (see method:export_page)"
+evidence = "as method:export_page"
+
+[[waiver]]
+item = "param:export_page.format"
+reason = "its method needs a page prepared in the web UI (see method:export_page)"
+evidence = "as method:export_page"
+
+[[waiver]]
+item = "param:export_page.layout_name"
+reason = "its method needs a page prepared in the web UI (see method:export_page)"
+evidence = "as method:export_page"
+
+[[waiver]]
+item = "param:Shotgun.convert_datetimes_to_utc"
+reason = "no fpt surface sets it; fpt always uses the library default, which the wire format relies on (owner decision 2, 2026-11-10)"
+evidence = "no global option or profile field reaches it; api call cannot reach the constructor"
+
+[[waiver]]
+item = "param:Shotgun.auth_token"
+reason = "needs 2FA; provoking it would lock out the suite's login (spec, Fixtures)"
+evidence = "auth login --otp is covered by unit tests only"
+
+[[waiver]]
+item = "param:authenticate_human_user.auth_token"
+reason = "needs 2FA; provoking it would lock out the suite's login (spec, Fixtures)"
+evidence = "as param:Shotgun.auth_token"
+
+[[waiver]]
+item = "param:Shotgun.http_proxy"
+reason = "needs an HTTP proxy between razorback and the sandbox; none exists and the spec's fixtures do not describe one"
+evidence = "FPT_HTTP_PROXY and the profile field are unit-tested; no proxy available"
+
+[[waiver]]
+item = "field-read:jsonb"
+reason = "no jsonb value exists on the sandbox and both jsonb fields are read-only"
+evidence = "EventLogEntry.audit_trail and Note.meta (both read-only) are null in the newest 200 rows; nothing can write them"
+
+[[waiver]]
+item = "field-read:pivot_column"
+reason = "the API returns no value for any pivot_column field"
+evidence = "find returned no non-null value in any of the 55 pivot_column fields (50 rows each, 0 errors)"
+
+[[waiver]]
+item = "field-write:entity_type"
+reason = "the only editable entity_type field is ActionMenuItem.entity_type; schema_field_create refuses the type, and a temporary ActionMenuItem is outside the spec's fixtures"
+evidence = "schema_field_create: Fault: API schema_field_create() can't create 'entity_type' data type.  Valid data types:"
+
+[[waiver]]
+item = "field-write:password"
+reason = "the only editable password field is ClientUser.password_proxy; schema_field_create refuses the type, and a temporary ClientUser account is outside the spec's fixtures"
+evidence = "schema_field_create: Fault: API schema_field_create() can't create 'password' data type.  Valid data types:"
+
+[[waiver]]
+item = "filter-op:number.not_between"
+reason = "the sandbox server rejects not_between on number fields, although the Autodesk reference lists it"
+evidence = "server: \"Shot.sg_fpt_parity_number's 'number' data type doesn't support 'not_between' 'relation'\"; same for the built-in Shot.sg_cut_in and for float. The Autodesk reference lists it"
+
+
+[[waiver]]
+item = "field-read:image"
+reason = "image values are signed S3 URLs that change on every read, so two direct reads never match"
+evidence = "parity case field_read.image (runs 20261110T202828Z and 20261111T000400Z): unstable, $[0].image differs between the two direct calls in its X-Amz-* query parameters"
+
+# Accepted by the owner, 2026-11-11 (Phase 5 report).
+
+[[waiver]]
+item = "method:user_subscriptions_create"
+reason = "shotgun_api3 3.10.5 sends {\"users\": [...]}, which the server rejects for any input; the server accepts only a dict keyed by HumanUser id (python-api issue #463)"
+evidence = "parity case user_subscriptions_create.resend: Fault: Uncaught exception! Invalid humanUserId users (script key and admin login); a raw {\"<id>\": S} call was accepted (2026-11-11)"
+
+[[waiver]]
+item = "param:user_subscriptions_create.users"
+reason = "its method cannot succeed with this library version (see method:user_subscriptions_create)"
+evidence = "as method:user_subscriptions_create"

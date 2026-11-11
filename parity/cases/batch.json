@@ -1,0 +1,12 @@
+[
+  {"id": "batch.create_update_delete", "method": "batch", "mode": "mirrored",
+   "args": {"requests": [
+     {"request_type": "create", "entity_type": "Shot",
+      "data": {"code": "fpt_parity_batch", "project": "${project}"}},
+     {"request_type": "update", "entity_type": "Shot", "entity_id": "${victim.id}",
+      "data": {"description": "fpt parity batch"}},
+     {"request_type": "delete", "entity_type": "Shot", "entity_id": "${victim.id}"}]},
+   "argv": ["batch"],
+   "stdin": "{\"request_type\": \"create\", \"entity_type\": \"Shot\", \"data\": {\"code\": \"fpt_parity_batch\", \"project\": ${project}}}\n{\"request_type\": \"update\", \"entity_type\": \"Shot\", \"entity_id\": ${victim.id}, \"data\": {\"description\": \"fpt parity batch\"}}\n{\"request_type\": \"delete\", \"entity_type\": \"Shot\", \"entity_id\": ${victim.id}}\n",
+   "readback": {"entity": "${victim}", "fields": ["code", "description"]}, "masks": ["id"]}
+]

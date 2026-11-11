@@ -1,0 +1,59 @@
+[project]
+name = "fpt-cli"
+dynamic = ["version"]
+description = "Command-line interface for ShotGrid / Flow Production Tracking"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1",
+    "rich>=13.7",
+    "keyring>=25",
+    "tomli-w>=1.0",
+    "tomli>=2.0; python_version < '3.11'",
+    # The only library version the parity suite has verified.
+    "shotgun-api3==3.10.5",
+]
+
+[project.urls]
+Repository = "https://github.com/symbiote-labs/fpt-cli"
+
+[project.scripts]
+fpt = "fpt.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "tomli>=2.0"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/fpt/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fpt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib -m 'not live'"
+pythonpath = ["."]
+markers = ["live: runs against a real site; needs FPT_TEST_SITE, FPT_TEST_SCRIPT_NAME, FPT_TEST_API_KEY"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.mypy]
+python_version = "3.10"
+disallow_untyped_defs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["shotgun_api3", "shotgun_api3.*"]
+ignore_missing_imports = true
+follow_imports = "skip"

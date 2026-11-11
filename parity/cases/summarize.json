@@ -1,0 +1,9 @@
+[
+  {"id": "summarize.any_include_archived_projects", "method": "summarize", "mode": "identical",
+   "args": {"entity_type": "Shot", "filters": [["id", "is", "${twin.id}"], ["id", "is", "${past.id}"]],
+            "filter_operator": "any", "summary_fields": [{"field": "id", "type": "record_count"}],
+            "include_archived_projects": false},
+   "argv": ["summarize", "Shot", "-f", "id is ${twin.id}", "-f", "id is ${past.id}", "--any",
+            "--summary-fields", "[{\"field\": \"id\", \"type\": \"record_count\"}]",
+            "--include-archived-projects", "false"]}
+]

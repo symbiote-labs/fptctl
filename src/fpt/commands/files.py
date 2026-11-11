@@ -1,0 +1,175 @@
+"""File commands: upload, thumbnail upload/share, download, attachment url."""
+
+from __future__ import annotations
+
+import json
+import sys
+from typing import Any
+
+import click
+
+from fpt.commands._options import (
+    dry_run_option,
+    parse_created_at,
+    parse_entity,
+    run,
+    stack,
+)
+from fpt.context import AppContext
+from fpt.errors import UsageError
+from fpt.wire import from_wire, loads
+
+upload_options = stack(
+    click.option("--display-name", help="The Attachment's display name."),
+    click.option("--tag-list", help="Tags for the Attachment, comma-separated."),
+    click.option(
+        "--created-at", metavar="YYYY-MM-DDTHH:MM:SSZ", help="The upload's creation time."
+    ),
+)
+
+
+def _upload_kwargs(
+    display_name: str | None, tag_list: str | None, created_at: str | None
+) -> dict[str, Any]:
+    """Only the options the user gave."""
+    kwargs: dict[str, Any] = {}
+    if display_name is not None:
+        kwargs["display_name"] = display_name
+    if tag_list is not None:
+        kwargs["tag_list"] = tag_list
+    if created_at is not None:
+        kwargs["created_at"] = parse_created_at(created_at)
+    return kwargs
+
+
+def _attachment(text: str) -> Any:
+    """ATTACHMENT is JSON: an Attachment id, or the value of a file/link field."""
+    try:
+        value = from_wire(loads(text))
+    except json.JSONDecodeError as exc:
+        raise UsageError(f"ATTACHMENT is not valid JSON: {exc}") from exc
+    if isinstance(value, bool) or not isinstance(value, (int, dict)):
+        raise UsageError(f"ATTACHMENT needs an id or a JSON object, got {text!r}.")
+    return value
+
+
+@click.command()
+@click.argument("entity_type", metavar="TYPE")
+@click.argument("entity_id", metavar="ID", type=int)
+@click.argument("path", metavar="PATH")
+@click.option("--field-name", help="The file/link field to hold the upload.")
+@upload_options
+@dry_run_option
+@click.pass_obj
+def upload(
+    app: AppContext,
+    entity_type: str,
+    entity_id: int,
+    path: str,
+    field_name: str | None,
+    dry_run: bool,
+    **options: Any,
+) -> None:
+    """Upload the file at PATH to entity ID of TYPE; prints the Attachment id."""
+    kwargs: dict[str, Any] = {"entity_type": entity_type, "entity_id": entity_id, "path": path}
+    if field_name is not None:
+        kwargs["field_name"] = field_name
+    run(app, "upload", {**kwargs, **_upload_kwargs(**options)}, dry_run=dry_run)
+
+
+@click.group()
+def thumbnail() -> None:
+    """Upload and share thumbnails."""
+
+
+@thumbnail.command("upload")
+@click.argument("entity_type", metavar="TYPE")
+@click.argument("entity_id", metavar="ID", type=int)
+@click.argument("path", metavar="PATH")
+@click.option("--filmstrip", is_flag=True, help="Upload a filmstrip thumbnail.")
+@upload_options
+@dry_run_option
+@click.pass_obj
+def thumbnail_upload(
+    app: AppContext,
+    entity_type: str,
+    entity_id: int,
+    path: str,
+    filmstrip: bool,
+    dry_run: bool,
+    **options: Any,
+) -> None:
+    """Set the thumbnail of entity ID of TYPE from the image at PATH."""
+    method = "upload_filmstrip_thumbnail" if filmstrip else "upload_thumbnail"
+    kwargs = {"entity_type": entity_type, "entity_id": entity_id, "path": path}
+    run(app, method, {**kwargs, **_upload_kwargs(**options)}, dry_run=dry_run)
+
+
+@thumbnail.command("share")
+@click.argument("entities", metavar="ENTITY...", nargs=-1, required=True)
+@click.option("--path", "thumbnail_path", metavar="FILE", help="Upload this image and share it.")
+@click.option("--source", metavar="ENTITY", help="Share this entity's thumbnail.")
+@click.option("--filmstrip", is_flag=True, help="Share a filmstrip thumbnail.")
+@upload_options
+@dry_run_option
+@click.pass_obj
+def thumbnail_share(
+    app: AppContext,
+    entities: tuple[str, ...],
+    thumbnail_path: str | None,
+    source: str | None,
+    filmstrip: bool,
+    dry_run: bool,
+    **options: Any,
+) -> None:
+    """Give every ENTITY (Type:123 or JSON) the same thumbnail."""
+    if (thumbnail_path is None) == (source is None):
+        raise UsageError("Give exactly one of --path and --source.")
+    kwargs: dict[str, Any] = {"entities": [parse_entity(item, "ENTITY") for item in entities]}
+    if thumbnail_path is not None:
+        kwargs["thumbnail_path"] = thumbnail_path
+    if source is not None:
+        kwargs["source_entity"] = parse_entity(source, "--source")
+    if filmstrip:
+        kwargs["filmstrip_thumbnail"] = True
+    run(app, "share_thumbnail", {**kwargs, **_upload_kwargs(**options)}, dry_run=dry_run)
+
+
+@click.command()
+@click.argument("attachment", metavar="ATTACHMENT")
+@click.option(
+    "-o",
+    "--output",
+    required=True,
+    metavar="PATH|-",
+    help="Write the file to PATH and print PATH, or write the raw bytes to stdout with '-'.",
+)
+@click.pass_obj
+def download(app: AppContext, attachment: str, output: str) -> None:
+    """Download ATTACHMENT (an id, or a file/link field's value as JSON)."""
+    if not output:
+        raise UsageError("-o needs a PATH, or '-' for stdout.")
+    value = _attachment(attachment)
+    if output != "-":
+        run(app, "download_attachment", {"attachment": value, "file_path": output})
+        return
+    data = app.client.download_attachment(attachment=value)
+    if isinstance(data, bytes):
+        sys.stdout.flush()
+        sys.stdout.buffer.write(data)
+        sys.stdout.buffer.flush()
+    else:
+        app.emit(data)
+
+
+@click.group("attachment")
+def attachment_group() -> None:
+    """Attachment helpers."""
+
+
+@attachment_group.command("url")
+@click.argument("attachment", metavar="ATTACHMENT")
+@click.pass_obj
+def attachment_url(app: AppContext, attachment: str) -> None:
+    """The download URL of ATTACHMENT (an id, or a file/link field's value as JSON)."""
+    run(app, "get_attachment_download_url", {"attachment": _attachment(attachment)})

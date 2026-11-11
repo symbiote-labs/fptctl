@@ -1,0 +1,5 @@
+[
+  {"id": "info", "method": "info", "mode": "identical", "args": {}, "argv": ["info"]},
+  {"id": "get_session_token", "method": "get_session_token", "mode": "identical", "args": {},
+   "argv": ["auth", "token"]}
+]
