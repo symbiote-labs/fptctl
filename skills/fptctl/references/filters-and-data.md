@@ -27,6 +27,7 @@ VALUE. VALUE is then read with three rules, in order:
 | `-f 'description is null'` | `["description", "is", null]` |
 | `-f 'created_at in_last [3,"DAY"]'` | `["created_at", "in_last", 3, "DAY"]` (spread) |
 | `-f 'sg_cut_in between [1001,1100]'` | `["sg_cut_in", "between", 1001, 1100]` (spread) |
+| `-f 'created_at greater_than {"$datetime": "2026-11-10T07:00:00Z"}'` | `["created_at", "greater_than", <datetime>]` |
 
 A JSON array is spread into separate arguments only for `between`, `not_between`, `in_last`,
 `not_in_last`, `in_next` and `not_in_next`. For every other operator an array is one value.
