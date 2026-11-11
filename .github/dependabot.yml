@@ -1,0 +1,7 @@
+version: 2
+updates:
+  # Keeps the pinned action SHAs current. shotgun-api3 is followed by the Library watch workflow.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

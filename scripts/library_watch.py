@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -49,13 +50,21 @@ def latest_version() -> str:
         return str(json.load(response)["info"]["version"])
 
 
+TOKEN_VARIABLES = ("GH_TOKEN", "GITHUB_TOKEN")
+
+
 def api_of(version: str) -> dict[str, Any]:
-    """The public API of one library version, from a throw-away environment."""
+    """The public API of one library version, from a throw-away environment.
+
+    Installing and importing a new release runs code nobody has reviewed yet, so the GitHub
+    token the workflow holds for opening the issue is kept out of that process.
+    """
     command = [
         "uv", "run", "--no-project", "--quiet", "--with", f"shotgun-api3=={version}",
         "python", str(API_SIGNATURES),
     ]  # fmt: skip
-    output = subprocess.run(command, check=True, capture_output=True, text=True).stdout
+    env = {name: value for name, value in os.environ.items() if name not in TOKEN_VARIABLES}
+    output = subprocess.run(command, check=True, capture_output=True, text=True, env=env).stdout
     api: dict[str, Any] = json.loads(output)
     return api
 
@@ -90,6 +99,11 @@ def diff_api(old: dict[str, Any], new: dict[str, Any]) -> ApiDiff:
     )
 
 
+def _code(text: str) -> str:
+    """Text for a markdown code span: a backtick from upstream would end the span early."""
+    return text.replace("`", "'")
+
+
 def issue_title(version: str) -> str:
     return f"shotgun-api3 {version} is out"
 
@@ -106,11 +120,11 @@ def render_report(pinned: str, latest: str, diff: ApiDiff) -> str:
     if diff.empty:
         lines.append("None: no public method or signature changed.")
     for name in diff.added:
-        lines.append(f"- added `{name}`")
+        lines.append(f"- added `{_code(name)}`")
     for name in diff.removed:
-        lines.append(f"- removed `{name}`")
+        lines.append(f"- removed `{_code(name)}`")
     for name, (before, after) in diff.changed.items():
-        lines.append(f"- changed `{name}`: `{before}` -> `{after}`")
+        lines.append(f"- changed `{_code(name)}`: `{_code(before)}` -> `{_code(after)}`")
     lines += [
         "",
         "## Upgrade",

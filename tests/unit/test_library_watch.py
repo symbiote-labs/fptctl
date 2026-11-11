@@ -81,3 +81,30 @@ def test_readme_names_the_pinned_library_version_and_the_current_release() -> No
     assert f"`shotgun_api3` {pinned}" in readme, "README must name the pinned library version"
     tags = set(re.findall(r"fpt-cli@v([0-9.]+)", readme))
     assert tags == {__version__}, f"README install lines point at {tags}, not v{__version__}"
+
+
+def test_api_of_keeps_github_tokens_away_from_the_new_library(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: dict[str, Any] = {}
+
+    def fake_run(command: list[str], **kwargs: Any) -> Any:
+        seen.update(kwargs)
+        return type("Done", (), {"stdout": '{"methods": {}, "constructor": {}}'})()
+
+    monkeypatch.setenv("GH_TOKEN", "secret")
+    monkeypatch.setenv("GITHUB_TOKEN", "secret")
+    monkeypatch.setattr(library_watch.subprocess, "run", fake_run)
+
+    library_watch.api_of("9.9.9")
+
+    assert "GH_TOKEN" not in seen["env"] and "GITHUB_TOKEN" not in seen["env"]
+    assert "PATH" in seen["env"], "the rest of the environment still reaches uv"
+
+
+def test_report_keeps_upstream_backticks_out_of_code_spans() -> None:
+    diff = library_watch.ApiDiff(changed={"find": ("(a)", "(a, b='`x`')")})
+
+    report = library_watch.render_report("1.0.0", "1.0.1", diff)
+
+    assert "(a, b=''x'')" in report
