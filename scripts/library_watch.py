@@ -1,8 +1,8 @@
 """Check PyPI for a shotgun-api3 release newer than fpt's pin, and report how its API changed.
 
     uv run python -m scripts.library_watch          # print the report
-    uv run python -m scripts.library_watch --report-dir out  # also write the issue to out/
-    python -m scripts.library_watch --open-issue out         # open it on GitHub, once per version
+    uv run python -m scripts.library_watch --report-dir out  # also write out/report.json
+    python -m scripts.library_watch --open-issue out         # check it, open the issue once
 
 The report lists the methods and parameters that were added, removed or changed between the
 pinned version and the new one, read from both versions by scripts/api_signatures.py. The
@@ -166,36 +166,97 @@ def open_issue(title: str, body: str) -> str:
     return f"opened: {created.strip()}"
 
 
+REPORT_FILE = "report.json"
+MAX_REPORT_BYTES = 256 * 1024
+MAX_ITEMS = 500
+MAX_TEXT = 2000
+
+
+def report_data(pinned: str, latest: str, diff: ApiDiff) -> dict[str, Any]:
+    return {
+        "pinned": pinned,
+        "latest": latest,
+        "added": diff.added,
+        "removed": diff.removed,
+        "changed": {name: list(pair) for name, pair in diff.changed.items()},
+    }
+
+
+def _text(value: Any) -> str:
+    if not isinstance(value, str) or len(value) > MAX_TEXT:
+        raise ValueError("report text must be a string of reasonable length")
+    return value
+
+
+def checked_report(raw: bytes, pinned: str, latest: str) -> tuple[str, ApiDiff]:
+    """Validate a report written by the job that ran the new library's code.
+
+    That job is untrusted, so nothing it wrote is used as it stands: the versions must match the
+    ones this job read itself, the shape must be exact, and the caller renders the issue from the
+    validated data.
+    """
+    if len(raw) > MAX_REPORT_BYTES:
+        raise ValueError("report is too large")
+    data = json.loads(raw)
+    if not isinstance(data, dict) or set(data) != {
+        "pinned",
+        "latest",
+        "added",
+        "removed",
+        "changed",
+    }:
+        raise ValueError("report has unexpected keys")
+    if data["pinned"] != pinned or data["latest"] != latest:
+        raise ValueError("report versions do not match the pin and PyPI")
+    added, removed, changed = data["added"], data["removed"], data["changed"]
+    if not (isinstance(added, list) and isinstance(removed, list) and isinstance(changed, dict)):
+        raise ValueError("report lists have the wrong types")
+    if len(added) + len(removed) + len(changed) > MAX_ITEMS:
+        raise ValueError("report lists too many changes")
+    pairs: dict[str, tuple[str, str]] = {}
+    for name, pair in changed.items():
+        if not isinstance(pair, list) or len(pair) != 2:
+            raise ValueError("a changed signature must be a [before, after] pair")
+        pairs[_text(name)] = (_text(pair[0]), _text(pair[1]))
+    diff = ApiDiff(
+        added=[_text(name) for name in added],
+        removed=[_text(name) for name in removed],
+        changed=pairs,
+    )
+    return latest, diff
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Watch for shotgun-api3 releases.")
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
-        "--report-dir", type=Path, help="also write title.txt and body.md there, for --open-issue"
+        "--report-dir", type=Path, help=f"also write {REPORT_FILE} there, for --open-issue"
     )
     group.add_argument(
-        "--open-issue", type=Path, metavar="DIR", help="open the issue a --report-dir run wrote"
+        "--open-issue", type=Path, metavar="DIR", help="open the issue a --report-dir run found"
     )
     args = parser.parse_args(argv)
-    if args.open_issue is not None:
-        # Kept apart from the report run: this step holds the token, and runs no library code.
-        title_file = args.open_issue / "title.txt"
-        if not title_file.exists():
-            print("No new release was reported; nothing to open.")
-            return 0
-        body = (args.open_issue / "body.md").read_text(encoding="utf-8")
-        print(open_issue(title_file.read_text(encoding="utf-8").strip(), body))
-        return 0
     pinned = pinned_version(PYPROJECT.read_text(encoding="utf-8"))
     latest = latest_version()
     if version_key(latest) <= version_key(pinned):
         print(f"shotgun-api3 {pinned} is the latest release; nothing to do.")
         return 0
-    report = render_report(pinned, latest, diff_api(api_of(pinned), api_of(latest)))
-    print(report)
+    if args.open_issue is not None:
+        # This step holds the token and runs no library code. It re-reads the versions itself
+        # and renders the issue from the validated report.
+        report_file = args.open_issue / REPORT_FILE
+        if not report_file.exists():
+            print("No report was handed over; nothing to open.")
+            return 1
+        version, diff = checked_report(report_file.read_bytes(), pinned, latest)
+        print(open_issue(issue_title(version), render_report(pinned, version, diff)))
+        return 0
+    diff = diff_api(api_of(pinned), api_of(latest))
+    print(render_report(pinned, latest, diff))
     if args.report_dir is not None:
         args.report_dir.mkdir(parents=True, exist_ok=True)
-        (args.report_dir / "title.txt").write_text(issue_title(latest) + "\n", encoding="utf-8")
-        (args.report_dir / "body.md").write_text(report, encoding="utf-8")
+        text = json.dumps(report_data(pinned, latest, diff), indent=2)
+        (args.report_dir / REPORT_FILE).write_text(text, encoding="utf-8")
     return 0
 
 

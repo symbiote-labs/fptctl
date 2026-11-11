@@ -1,4 +1,5 @@
 import inspect
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -114,23 +115,61 @@ def test_report_fences_upstream_text_so_it_cannot_become_markdown() -> None:
     assert "  after  (a, b='```') ## Injected heading [click](https://example.com)" in report
 
 
-def test_report_dir_then_open_issue_hands_over_title_and_body(
+def test_report_dir_then_open_issue_renders_the_issue_in_the_trusted_step(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(library_watch, "latest_version", lambda: "3.10.6")
-    monkeypatch.setattr(library_watch, "api_of", lambda version: api({"find": "()"}))
+    monkeypatch.setattr(library_watch, "api_of", lambda version: api({"find": f"({version})"}))
     opened: list[tuple[str, str]] = []
     monkeypatch.setattr(library_watch, "open_issue", lambda t, b: opened.append((t, b)) or "ok")
 
     library_watch.main(["--report-dir", str(tmp_path)])
     library_watch.main(["--open-issue", str(tmp_path)])
 
-    assert opened and opened[0][0] == "shotgun-api3 3.10.6 is out"
+    assert opened[0][0] == "shotgun-api3 3.10.6 is out"
     assert "fpt pins **3.10.5**" in opened[0][1]
+    assert "  after  (3.10.6)" in opened[0][1]
 
 
-def test_open_issue_does_nothing_when_no_release_was_reported(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+def report(**changes: Any) -> bytes:
+    data: dict[str, Any] = {
+        "pinned": "3.10.5", "latest": "3.10.6", "added": [], "removed": [], "changed": {},
+    }  # fmt: skip
+    data.update(changes)
+    return json.dumps(data).encode()
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        report(latest="3.10.9"),
+        report(pinned="3.9.0"),
+        report(extra="x"),
+        report(added="find"),
+        report(changed={"find": ["(a)"]}),
+        report(added=["x" * 3000]),
+        b"x" * (library_watch.MAX_REPORT_BYTES + 1),
+    ],
+    ids=["other-latest", "other-pin", "extra-key", "added-not-a-list", "bad-pair", "long-text",
+         "too-big"],
+)  # fmt: skip
+def test_checked_report_rejects_anything_the_untrusted_job_could_tamper_with(raw: bytes) -> None:
+    with pytest.raises(ValueError):
+        library_watch.checked_report(raw, "3.10.5", "3.10.6")
+
+
+def test_checked_report_accepts_a_well_formed_report() -> None:
+    version, diff = library_watch.checked_report(
+        report(added=["export"], changed={"find": ["(a)", "(a, b)"]}), "3.10.5", "3.10.6"
+    )
+
+    assert version == "3.10.6"
+    assert diff.added == ["export"] and diff.changed == {"find": ("(a)", "(a, b)")}
+
+
+def test_open_issue_fails_when_the_report_is_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    assert library_watch.main(["--open-issue", str(tmp_path)]) == 0
-    assert "nothing to open" in capsys.readouterr().out
+    monkeypatch.setattr(library_watch, "latest_version", lambda: "3.10.6")
+
+    assert library_watch.main(["--open-issue", str(tmp_path)]) == 1

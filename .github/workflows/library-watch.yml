@@ -5,8 +5,9 @@ name: Library watch
 # there.
 #
 # Two jobs, because inspecting a new release installs and imports code nobody has reviewed yet.
-# That job can only read the repository and keeps no credentials in its checkout; the job that
-# can open issues runs none of the library's code.
+# That job can only read the repository and keeps no credentials in its checkout. It hands over
+# report.json only. The job that can open issues runs none of the library's code, re-reads both
+# versions itself, validates the report's shape and size, and renders the issue itself.
 on:
   schedule:
     - cron: "23 7 * * *"
@@ -42,7 +43,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: actions/download-artifact@v7
-        continue-on-error: true  # no artifact when there is no new release
+        continue-on-error: true  # no artifact when there is no new release; the step below checks
         with:
           name: library-report
           path: report
